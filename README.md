@@ -28,7 +28,11 @@ Note: The bonus features are not implemented yet.
 For more details, please check the [doc](doc) directory.
 
 ## Requirements
-see [requirements.txt](requirements.txt) to install the dependencies.
+- Python 3.11
+
+See [requirements.txt](requirements.txt) to install the dependencies.
+
+Please make sure [ply](ply) directory is in the same directory as [main.py](main.py).
 
 ## Usage
 
