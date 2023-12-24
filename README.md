@@ -160,7 +160,7 @@ Because we need to pass the public test data to pass the course, I provide a scr
 
 You can put your own test data set in [test_data](test_data) directory.
 
-Note: I skip the bonus features test data which file name starts with 'b'.
+Note: I skip the bonus features test cases which file name start with 'b'.
 
 Before running the script, please make sure `IS_DEBUG` is set to `False` in [main.py](main.py).
 
@@ -232,6 +232,8 @@ Running main.py with input file: 08_2.lsp
 The visualization is the most interesting part of this project for me :)
 
 If you can see the note here, I bet you are also someone who struggles with yacc and lex. So you turn to Python.
+
+You can also check [lex_and_yacc](lex_and_yacc) directory to see how I struggle with yacc and lex. It only works for first 6 features.
 
 @EditTime : 2023-12-24 19:13
 
