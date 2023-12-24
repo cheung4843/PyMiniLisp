@@ -149,7 +149,7 @@ Status Stack:
 []
 ```
 ##### AST Visualization
-![AST](AST.png)
+![AST](ast.png)
 
 ## Use Public Test Data
 Because we need to pass the public test data to pass the course, I provide a script to run the public test data.
