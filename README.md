@@ -19,8 +19,8 @@ Even I can visualize the AST.
 - [x] Named Function
 
 ## Bonus Features
-- [ ] Recursion
-- [ ] Type Checking
+- [x] Recursion
+- [x] Type Checking
 - [ ] Nested Function
 - [ ] First-class Function
 
