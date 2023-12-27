@@ -6,8 +6,11 @@ It's the final project of the course Compiler(CE3006*) in NCU, Taiwan.
 Thanks to [ply](https://github.com/dabeaz/ply), a Python implementation of Lex and Yacc.
 ## Why Python?
 Since the lex and yacc are not easy to debug, I choose Python to implement this project. 
+
 Even I can visualize the AST.
 
+## My Honest Reaction
+![](misc/Struggles.gif)
 ## Basic Features
 - [x] Syntax Validation
 - [x] Print
@@ -25,7 +28,9 @@ Even I can visualize the AST.
 - [ ] First-class Function
 
 Note: Some bonus features are not implemented yet. 
+
 And the bugs exist in the current version.
+
 For more details, please check the [doc](doc) directory.
 
 ## Requirements
@@ -154,7 +159,7 @@ Status Stack:
 []
 ```
 ##### AST Visualization
-![AST](ast.png)
+![AST](misc/ast.png)
 
 ## Use Public Test Data
 Because we need to pass the public test data to pass the course, I provide a script to run the public test data.
@@ -228,6 +233,10 @@ Running main.py with input file: 08_1.lsp
 Running main.py with input file: 08_2.lsp
 3
 ```
+## The Struggles
+1. How to deal with the scope of variables?
+2. How to deal with the scope of functions? Especially the nested function.
+3. Should I restructure the AST to make it easier to implement the bonus features?
 
 ## Note
 The visualization is the most interesting part of this project for me :)
@@ -238,7 +247,7 @@ You can also check [lex_and_yacc](lex_and_yacc) directory to see how I struggle 
 
 It still has some bugs, because I code according to the test data. So it may not work for other test data.
 
-@EditTime : 2023-12-27 21:39
+@EditTime : 2023-12-27 22:06
 
 
 
