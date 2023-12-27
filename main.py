@@ -6,6 +6,7 @@ from collections import deque, defaultdict
 
 import networkx as nx
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 IS_DEBUG = False
 
@@ -388,13 +389,14 @@ if IS_VALID_SYNTAX and IS_DEBUG:
 # --- Interpreter ---
 
 class Function:
-    def __init__(self, name, parm_list, arg_list, parm_dict, fun_exp):
+    def __init__(self, name, parm_list=[], arg_list=[], parm_dict={}, fun_exp=None):
         self.name = name
         self.parm_list = parm_list
         self.arg_list = arg_list
         self.parm_dict = parm_dict
         self.fun_exp = fun_exp
         self.is_anonymous = self.name == '_'
+        self.caller = None
 
     def reset_parameters(self):
         self.parm_list.clear()
@@ -409,8 +411,11 @@ variable_dict = defaultdict()
 function_dict = defaultdict()
 # NORMAL: 普通變數
 # FUNCTION_ANONYMOUS: 匿名函式取得參數
+# FUNCTION_DEFINED: 函式取得參數
 # VARIABLE_STATUS = "NORMAL"
 status_stack = []
+# 用來記錄函式的參數與引數的對應，加速遞迴函式的執行
+fun_param_memo = defaultdict()
 
 
 def travel_ast(cur: Node):
@@ -418,59 +423,102 @@ def travel_ast(cur: Node):
     if cur.type == 'STMTS':
         travel_ast(cur.children[0])
         travel_ast(cur.children[1])
-    if cur.type == 'PLUS':
+    elif cur.type == 'PLUS':
         opr_stack.append('+')
-        res = travel_ast(cur.children[0]) + travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 + exp2
         opr_stack.pop()
         return res
     elif cur.type == 'MINUS':
         opr_stack.append('-')
-        res = travel_ast(cur.children[0]) - travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 - exp2
         opr_stack.pop()
         return res
     elif cur.type == 'MUL':
         opr_stack.append('*')
-        res = travel_ast(cur.children[0]) * travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 * exp2
         opr_stack.pop()
         return res
     elif cur.type == 'DIV':
         opr_stack.append('/')
-        res = travel_ast(cur.children[0]) // travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 // exp2
         opr_stack.pop()
         return res
     elif cur.type == 'MOD':
         opr_stack.append('%')
-        res = travel_ast(cur.children[0]) % travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 % exp2
         opr_stack.pop()
         return res
     elif cur.type == 'GREATER':
         opr_stack.append('>')
-        res = travel_ast(cur.children[0]) > travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 > exp2
         opr_stack.pop()
         return res
     elif cur.type == 'LESS':
         opr_stack.append('<')
-        res = travel_ast(cur.children[0]) < travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 < exp2
         opr_stack.pop()
         return res
     elif cur.type == 'EQUAL':
         opr_stack.append('=')
-        res = travel_ast(cur.children[0]) == travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 == exp2
         opr_stack.pop()
         return res
     elif cur.type == 'AND':
         opr_stack.append('and')
-        res = travel_ast(cur.children[0]) and travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 and exp2
         opr_stack.pop()
         return res
     elif cur.type == 'OR':
         opr_stack.append('or')
-        res = travel_ast(cur.children[0]) or travel_ast(cur.children[1])
+        exp1 = travel_ast(cur.children[0])
+        exp2 = travel_ast(cur.children[1])
+        if type(exp1) is not type(exp2):
+            raise TypeError
+        res = exp1 or exp2
         opr_stack.pop()
         return res
     elif cur.type == 'NOT':
         opr_stack.append('not')
-        res = not travel_ast(cur.children[0])
+        exp1 = travel_ast(cur.children[0])
+        if type(exp1) is not bool:
+            raise TypeError
+        res = not exp1
         opr_stack.pop()
         return res
     elif cur.type == 'PRINT_NUM':
@@ -485,28 +533,36 @@ def travel_ast(cur: Node):
     elif cur.type == 'BOOL':
         return cur.value
     elif cur.type == 'EXPS':
+        exp1 = travel_ast(cur.children[0])
+        exp2 = None
+        if opr_stack[-1] != 'not':
+            exp2 = travel_ast(cur.children[1])
+            if type(exp1) is not type(exp2):
+                raise TypeError
         if opr_stack[-1] == '+':
-            return travel_ast(cur.children[0]) + travel_ast(cur.children[1])
+            return exp1 + exp2
         elif opr_stack[-1] == '-':
-            return travel_ast(cur.children[0]) - travel_ast(cur.children[1])
+            return exp1 - exp2
         elif opr_stack[-1] == '*':
-            return travel_ast(cur.children[0]) * travel_ast(cur.children[1])
+            return exp1 * exp2
         elif opr_stack[-1] == '/':
-            return travel_ast(cur.children[0]) / travel_ast(cur.children[1])
+            return exp1 // exp2
         elif opr_stack[-1] == '%':
-            return travel_ast(cur.children[0]) % travel_ast(cur.children[1])
+            return exp1 % exp2
         elif opr_stack[-1] == '>':
-            return travel_ast(cur.children[0]) > travel_ast(cur.children[1])
+            return exp1 > exp2
         elif opr_stack[-1] == '<':
-            return travel_ast(cur.children[0]) < travel_ast(cur.children[1])
+            return exp1 < exp2
         elif opr_stack[-1] == '=':
-            return travel_ast(cur.children[0]) == travel_ast(cur.children[1])
+            return exp1 == exp2
         elif opr_stack[-1] == 'and':
-            return travel_ast(cur.children[0]) and travel_ast(cur.children[1])
+            return exp1 and exp2
         elif opr_stack[-1] == 'or':
-            return travel_ast(cur.children[0]) or travel_ast(cur.children[1])
+            return exp1 or exp2
         elif opr_stack[-1] == 'not':
-            return not travel_ast(cur.children[0])
+            if type(exp1) is not bool:
+                raise TypeError
+            return not exp1
     elif cur.type == 'IF_EXP':
         # ast tree: IF_EXP
         #    TEST_EXP THAN_EXP ELSE_EXP
@@ -516,7 +572,10 @@ def travel_ast(cur: Node):
             return travel_ast(cur.children[2])
     elif cur.type == 'TEST_EXP':
         # ast tree: TEST_EXP->EXP
-        return travel_ast(cur.children[0])
+        res = travel_ast(cur.children[0])
+        if type(res) is not bool:
+            raise TypeError
+        return res
     elif cur.type == 'THAN_EXP':
         # ast tree: THAN_EXP->EXP
         return travel_ast(cur.children[0])
@@ -544,14 +603,32 @@ def travel_ast(cur: Node):
             status = "NORMAL"
         else:
             status = status_stack[-1]
+        variable_name = cur.children[0].value
         if status == "NORMAL":
-            return variable_dict[cur.children[0].value]
-        elif status == "FUNCTION_ANONYMOUS" or status == "FUNCTION_DEFINED":
-            # 例如 (max x y) 這種情況，x y 未必會在呼叫函式的 parm_dict 裡面
-            if cur.children[0].value in fun_stack[-1].parm_dict:
-                return fun_stack[-1].parm_dict[cur.children[0].value]
+            return variable_dict[variable_name]
+        elif status == "FUNCTION_ANONYMOUS":
+            return fun_stack[-1].parm_dict[variable_name]
+        elif status == "FUNCTION_DEFINED":
+            param_cnt = len(fun_stack[-1].parm_list)
+            if param_cnt == 0:
+                # 如果是零個參數，就從 variable_dict 找
+                return variable_dict[variable_name]
+            elif param_cnt == 1:
+                if variable_name in fun_stack[-1].parm_dict:
+                    return fun_stack[-1].parm_dict[variable_name]
+                elif fun_stack[-1].caller and variable_name in fun_stack[-1].caller.parm_dict:
+                    return fun_stack[-1].caller.parm_dict[variable_name]
+                else:
+                    # 如果都沒找到，就從 variable_dict 找，最終選擇
+                    return variable_dict[cur.children[0].value]
             else:
-                return variable_dict[cur.children[0].value]
+                if fun_stack[-1].caller and variable_name in fun_stack[-1].caller.parm_dict:
+                    return fun_stack[-1].caller.parm_dict[variable_name]
+                elif variable_name in fun_stack[-1].parm_dict:
+                    return fun_stack[-1].parm_dict[variable_name]
+                else:
+                    # 如果都沒找到，就從 variable_dict 找，最終選擇
+                    return variable_dict[cur.children[0].value]
     elif cur.type == 'FUN_CALL_ANONYMOUS':
         # 匿名函式初始化，但這樣寫並沒有考慮嵌套函式的情況
         VARIABLE_STATUS = "FUNCTION_ANONYMOUS"
@@ -598,7 +675,6 @@ def travel_ast(cur: Node):
         elif cur.children[0].type == 'PARAM':
             # ast tree: PARAMS->PARAM->EXP(could be FUN_CALL)
             # 蒐集引數
-            # Todo: 這裡可能還要改
             fun_stack[-1].arg_list.append(travel_ast(cur.children[0].children[0]))
         if cur.children[1].type == 'PARAMS':
             # ast tree: PARAMS->PARAMS->PARAM->EXP
@@ -622,15 +698,27 @@ def travel_ast(cur: Node):
             # 蒐集更多參數
             travel_ast(cur.children[1])
     elif cur.type == 'FUN_CALL_DEFINED':
-        # 目前這樣寫有隱憂，如果函式裡面有函式，就會出問題
-        # TODO: 這裡要改，先方便測試
+        # TODO: 應付遞迴或是嵌套函式的情況
         VARIABLE_STATUS = "FUNCTION_DEFINED"
         status_stack.append(VARIABLE_STATUS)
         # ast tree: FUN_CALL_DEFINED->FUN_NAME->ID
         fun_name = cur.children[0].children[0].value
         # 找到對應的Function物件
-        fun_to_call = function_dict[fun_name]
-        fun_to_call.reset_parameters()
+        if fun_stack and fun_name == fun_stack[-1].name:
+            # 是遞迴函式，但這樣判斷並不準確
+            fun_to_call = deepcopy(fun_stack[-1])
+            fun_to_call.parm_list.clear()
+            fun_to_call.arg_list.clear()
+            fun_to_call.caller = fun_stack[-1]
+        else:
+            fun_to_call = function_dict[fun_name]
+            fun_to_call.parm_list.clear()
+            fun_to_call.arg_list.clear()
+            if fun_stack:
+                fun_to_call.caller = fun_stack[-1]
+            else:
+                fun_to_call.caller = None
+        # fun_to_call.reset_parameters()
         fun_stack.append(fun_to_call)
         fun_exp = fun_to_call.fun_exp
         # ast tree: FUN_EXP->[FUN_IDs]
@@ -645,7 +733,12 @@ def travel_ast(cur: Node):
         # ast tree: FUN_EXP->FUN_BODY
         # 函式本體
         fun_body = fun_to_call.fun_exp.children[1]
-        result = travel_ast(fun_body)
+        if (fun_name, tuple(fun_to_call.arg_list)) in fun_param_memo:
+            result = fun_param_memo[(fun_name, tuple(fun_to_call.arg_list))]
+        else:
+            result = travel_ast(fun_body)
+            fun_param_memo[(fun_name, tuple(fun_to_call.arg_list))] = result
+        # print(f'{fun_name}({fun_to_call.parm_dict})={result}')
         # VARIABLE_STATUS = "NORMAL"
         cur.value = result
         fun_stack.pop()
@@ -662,7 +755,10 @@ if IS_VALID_SYNTAX and IS_DEBUG:
     print("Result:")
 
 if IS_VALID_SYNTAX:
-    travel_ast(ast)
+    try:
+        travel_ast(ast)
+    except TypeError:
+        print("Type error!")
     if IS_DEBUG:
         print('---' * 10)
         print("Variable Dictionary:")
@@ -702,7 +798,7 @@ def plot_tree(root):
     graph = nx.Graph()
     pos = {}
     pos, _ = add_nodes_edges(graph, root, 0, pos, sibling_distance=100., vert_gap=0.4, xcenter=0.5)
-    nx.draw(graph, pos=pos, with_labels=True, font_weight='bold', node_size=700, node_color="skyblue", font_size=5)
+    nx.draw(graph, pos=pos, with_labels=True, font_weight='bold', node_size=700, node_color="skyblue", font_size=4)
     plt.show()
 
 
