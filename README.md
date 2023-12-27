@@ -24,7 +24,8 @@ Even I can visualize the AST.
 - [ ] Nested Function
 - [ ] First-class Function
 
-Note: The bonus features are not implemented yet.
+Note: Some bonus features are not implemented yet. 
+And the bugs exist in the current version.
 For more details, please check the [doc](doc) directory.
 
 ## Requirements
