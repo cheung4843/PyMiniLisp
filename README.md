@@ -235,7 +235,9 @@ If you can see the note here, I bet you are also someone who struggles with yacc
 
 You can also check [lex_and_yacc](lex_and_yacc) directory to see how I struggle with yacc and lex. It only works for first 6 features.
 
-@EditTime : 2023-12-24 20:27
+It still has some bugs, because I code according to the test data. So it may not work for other test data.
+
+@EditTime : 2023-12-27 21:39
 
 
 
