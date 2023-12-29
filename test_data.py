@@ -5,7 +5,7 @@ import os
 for root, dirs, files in os.walk("test_data"):
     for file in files:
         # skip the bonus test cases
-        if file.startswith("b"):
+        if file.startswith("b3"):
             break
         # copy current file to input.txt
         with open(os.path.join(root, file), "r") as f:

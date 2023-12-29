@@ -522,9 +522,15 @@ def travel_ast(cur: Node):
         opr_stack.pop()
         return res
     elif cur.type == 'PRINT_NUM':
-        print(travel_ast(cur.children[0]))
+        res = travel_ast(cur.children[0])
+        if type(res) is not int:
+            raise TypeError
+        print(res)
     elif cur.type == 'PRINT_BOOL':
-        if travel_ast(cur.children[0]):
+        res = travel_ast(cur.children[0])
+        if type(res) is not bool:
+            raise TypeError
+        if res:
             print('#t')
         else:
             print('#f')
@@ -650,7 +656,6 @@ def travel_ast(cur: Node):
         fun_body = fun_to_call.fun_exp.children[1]
         result = travel_ast(fun_body)
         # VARIABLE_STATUS = "NORMAL"
-        cur.value = result
         fun_stack.pop()
         status_stack.pop()
         return result
@@ -718,7 +723,6 @@ def travel_ast(cur: Node):
                 fun_to_call.caller = fun_stack[-1]
             else:
                 fun_to_call.caller = None
-        # fun_to_call.reset_parameters()
         fun_stack.append(fun_to_call)
         fun_exp = fun_to_call.fun_exp
         # ast tree: FUN_EXP->[FUN_IDs]
@@ -740,7 +744,6 @@ def travel_ast(cur: Node):
             fun_param_memo[(fun_name, tuple(fun_to_call.arg_list))] = result
         # print(f'{fun_name}({fun_to_call.parm_dict})={result}')
         # VARIABLE_STATUS = "NORMAL"
-        cur.value = result
         fun_stack.pop()
         status_stack.pop()
         return result
